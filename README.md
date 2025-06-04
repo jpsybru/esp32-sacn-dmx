@@ -36,7 +36,7 @@ Access the ESP32 via its IP address in a browser to:
 - Monitor link and DMX status
 - Check device version
 
-<img src=[https://github.com/jpsybru/esp32-sacn-dmx/blob/master/webserver.png]>
+<img src="https://github.com/jpsybru/esp32-sacn-dmx/blob/master/webserver.png">
 
 ## Flashing
 
