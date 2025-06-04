@@ -5,6 +5,7 @@
 #include <Preferences.h>
 #include <ArduinoOTA.h>
 
+// ---------- Hardware-Definitionen ----------
 #define ETH_CLK_MODE    ETH_CLOCK_GPIO0_IN
 #define ETH_POWER_PIN   16
 #define ETH_TYPE        ETH_PHY_LAN8720
@@ -64,16 +65,16 @@ void setupWebServer() {
     <script>
       function updateStatus() {
         fetch('/status').then(r => r.json()).then(j => {
-          document.getElementById('status').innerText = j.dmxActive ? 'DMX aktiv' : 'Wartet auf sACN';
+          document.getElementById('status').innerText = j.dmxActive ? 'DMX active' : 'waits for sACN';
         });
       }
       setInterval(updateStatus, 1000);
       window.onload = updateStatus;
     </script></head><body>
-    <h3>Aktuelles Universe: )rawliteral" + String(currentUniverse) + R"rawliteral(</h3>
+    <h3>current universe: )rawliteral" + String(currentUniverse) + R"rawliteral(</h3>
     <form action='/set'>
-    Neues Universe: <input type='number' name='u' min='1' max='63999'>
-    <input type='submit' value='Speichern'>
+    new universe: <input type='number' name='u' min='1' max='63999'>
+    <input type='submit' value='save'>
     </form>
     <p>Status: <span id='status'>...</span></p>
     <p><a href='/status'>Status JSON</a></p>
@@ -89,7 +90,7 @@ void setupWebServer() {
       uint16_t u = req->getParam("u")->value().toInt();
       if (u >= 1 && u <= 63999 && u != currentUniverse) {
         saveUniverse(u);
-        req->send(200, "text/html", "<p>Gespeichert. Neustart...</p>");
+        req->send(200, "text/html", "<p>saved. restart...</p>");
         delay(500);
         ESP.restart();
         return;
@@ -100,10 +101,10 @@ void setupWebServer() {
 
   server.on("/status", HTTP_GET, [](AsyncWebServerRequest *req){
     String j = "{";
-    j += ""ip":"" + ETH.localIP().toString() + "",";
-    j += ""link":" + String(ETH.linkUp() ? "true" : "false") + ",";
-    j += ""universe":" + String(currentUniverse) + ",";
-    j += ""dmxActive":" + String(dmxActive ? "true" : "false");
+    j += "\"ip\":\"" + ETH.localIP().toString() + "\",";
+    j += "\"link\":" + String(ETH.linkUp() ? "true" : "false") + ",";
+    j += "\"universe\":" + String(currentUniverse) + ",";
+    j += "\"dmxActive\":" + String(dmxActive ? "true" : "false");
     j += "}";
     req->send(200, "application/json", j);
   });
@@ -126,7 +127,7 @@ void setup() {
   Serial.printf("Loaded Universe %u\n", currentUniverse);
 
   if (e131.begin(E131_MULTICAST, 1, currentUniverse)) {
-    Serial.println("sACN Receiver gestartet");
+    Serial.println("sACN Receiver started");
   } else {
     Serial.println("sACN Start FAILED");
   }
