@@ -5,7 +5,7 @@
 #include <Preferences.h>
 #include <ArduinoOTA.h>
 
-// ---------- Hardware-Definitionen ----------
+// ---------- Hardware Definitions ----------
 #define ETH_CLK_MODE    ETH_CLOCK_GPIO0_IN
 #define ETH_POWER_PIN   16
 #define ETH_TYPE        ETH_PHY_LAN8720
@@ -16,11 +16,13 @@
 #define DMX_UART_NUM    2
 #define DMX_TX_PIN      4
 
+// ---------- Network Configuration ----------
 IPAddress localIP(10, 0, 0, 10);
 IPAddress gateway(10, 0, 0, 1);
 IPAddress subnet(255, 255, 255, 0);
 IPAddress dns(8, 8, 8, 8);
 
+// ---------- Global Objects ----------
 HardwareSerial dmxSerial(DMX_UART_NUM);
 AsyncWebServer server(80);
 Preferences preferences;
@@ -30,6 +32,7 @@ uint16_t currentUniverse = 1;
 bool dmxActive = false;
 unsigned long lastDMXTime = 0;
 
+// ---------- Save & Load Universe ----------
 void saveUniverse(uint16_t u) {
   preferences.begin("cfg", false);
   preferences.putUShort("uni", u);
@@ -43,6 +46,7 @@ uint16_t loadUniverse() {
   return u;
 }
 
+// ---------- DMX Sending ----------
 void sendDMX(const uint8_t *data, size_t length) {
   dmxSerial.end();
   pinMode(DMX_TX_PIN, OUTPUT);
@@ -51,36 +55,37 @@ void sendDMX(const uint8_t *data, size_t length) {
   digitalWrite(DMX_TX_PIN, HIGH);
   delayMicroseconds(12);
   dmxSerial.begin(250000, SERIAL_8N2, -1, DMX_TX_PIN);
-  dmxSerial.write(0);
+  dmxSerial.write(0); // Start code
   dmxSerial.write(data, length);
   dmxSerial.flush();
   dmxActive = true;
   lastDMXTime = millis();
 }
 
+// ---------- Web Interface ----------
 void setupWebServer() {
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *req){
     String html = R"rawliteral(
-    <!DOCTYPE html><html><head><meta charset='utf-8'><title>Universe</title>
-    <script>
-      function updateStatus() {
-        fetch('/status').then(r => r.json()).then(j => {
-          document.getElementById('status').innerText = j.dmxActive ? 'DMX active' : 'waits for sACN';
-        });
-      }
-      setInterval(updateStatus, 1000);
-      window.onload = updateStatus;
-    </script></head><body>
-    <h3>current universe: )rawliteral" + String(currentUniverse) + R"rawliteral(</h3>
-    <form action='/set'>
-    new universe: <input type='number' name='u' min='1' max='63999'>
-    <input type='submit' value='save'>
-    </form>
-    <p>Status: <span id='status'>...</span></p>
-    <p><a href='/status'>Status JSON</a></p>
-    <hr>
-    <p>Version: v1.0<br>by pJ BursT</p>
-    </body></html>
+      <!DOCTYPE html><html><head><meta charset='utf-8'><title>Universe</title>
+      <script>
+        function updateStatus() {
+          fetch('/status').then(r => r.json()).then(j => {
+            document.getElementById('status').innerText = j.dmxActive ? 'DMX active' : 'waits for sACN';
+          });
+        }
+        setInterval(updateStatus, 1000);
+        window.onload = updateStatus;
+      </script></head><body>
+      <h3>Current Universe: )rawliteral" + String(currentUniverse) + R"rawliteral(</h3>
+      <form action='/set'>
+        New Universe: <input type='number' name='u' min='1' max='63999'>
+        <input type='submit' value='Save'>
+      </form>
+      <p>Status: <span id='status'>...</span></p>
+      <p><a href='/status'>Status JSON</a></p>
+      <hr>
+      <p>Version: v1.0<br>by pJ BursT</p>
+      </body></html>
     )rawliteral";
     req->send(200, "text/html", html);
   });
@@ -90,7 +95,7 @@ void setupWebServer() {
       uint16_t u = req->getParam("u")->value().toInt();
       if (u >= 1 && u <= 63999 && u != currentUniverse) {
         saveUniverse(u);
-        req->send(200, "text/html", "<p>saved. restart...</p>");
+        req->send(200, "text/html", "<p>Saved. Restarting...</p>");
         delay(500);
         ESP.restart();
         return;
@@ -112,6 +117,7 @@ void setupWebServer() {
   server.begin();
 }
 
+// ---------- Setup ----------
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -119,9 +125,12 @@ void setup() {
 
   ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
   ETH.config(localIP, gateway, subnet, dns);
-  Serial.print("Warte auf Link..");
-  while (!ETH.linkUp()) { delay(200); Serial.print("."); }
-  Serial.println("\nLink ok, IP=" + ETH.localIP().toString());
+  Serial.print("Waiting for Ethernet link");
+  while (!ETH.linkUp()) {
+    delay(200);
+    Serial.print(".");
+  }
+  Serial.println("\nLink OK, IP = " + ETH.localIP().toString());
 
   currentUniverse = loadUniverse();
   Serial.printf("Loaded Universe %u\n", currentUniverse);
@@ -136,6 +145,7 @@ void setup() {
   setupWebServer();
 }
 
+// ---------- Loop ----------
 void loop() {
   ArduinoOTA.handle();
 
@@ -147,7 +157,7 @@ void loop() {
     uint16_t uni = htons(pkt.universe);
     uint16_t len = htons(pkt.property_value_count) - 1;
     if (uni == currentUniverse) {
-      Serial.printf("sACN Uni %u, len=%u\n", uni, len);
+      Serial.printf("sACN Uni %u, len = %u\n", uni, len);
       sendDMX(&pkt.property_values[1], len);
     }
   }
