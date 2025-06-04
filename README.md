@@ -27,6 +27,8 @@ This project provides an ESP32-based solution to receive sACN (E1.31) over Ether
 
 ## Web Interface
 
+    Default-Static-IP: 10.0.0.10
+
 Access the ESP32 via its IP address in a browser to:
 
 - View current DMX universe
