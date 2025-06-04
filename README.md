@@ -36,6 +36,8 @@ Access the ESP32 via its IP address in a browser to:
 - Monitor link and DMX status
 - Check device version
 
+<img src="[https://github.com/jpsybru/esp32-sacn-dmx/blob/master/webserver.png]">
+
 ## Flashing
 
 Use [PlatformIO](https://platformio.org/) or Arduino IDE to flash the project. Ensure you select the correct board (ESP32 Dev Module or WT32-ETH01).
