@@ -4,8 +4,8 @@ name: PlatformIO Build & Release
 on:
   push:
     tags:
-      - 'v*'       # z. B. v1.0, v1.1.2 löst Workflow aus
-  workflow_dispatch:  # Manuell in GitHub startbar
+      - 'v*'      
+  workflow_dispatch:  
 
 jobs:
   build:
@@ -32,7 +32,7 @@ jobs:
       - name: Rename firmware binary
         run: |
           mkdir -p dist
-          cp .pio/build/esp32dev/firmware.bin dist/firmware-${{ github.ref_name }}.bin
+          cp .pio/build/esp32dev/wt32-sacn-dmx-v1.bin dist/firmware-${{ github.ref_name }}.bin
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
