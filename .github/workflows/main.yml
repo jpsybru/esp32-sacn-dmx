@@ -1,7 +1,5 @@
 name: PlatformIO Build & Release
 
-env:
-  GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
 on:
   push:
